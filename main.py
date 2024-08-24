@@ -28,8 +28,8 @@ def hibernate_pc():
         os.system("systemctl suspend")
 
 # Define the hour at which the script should shut down (24-hour format)
-SHUTDOWN_HOUR = 1  # For example, 10 PM
-SHUTDOWN_HOUR_END = 3
+SHUTDOWN_HOUR = 3  # For example, 10 PM
+SHUTDOWN_HOUR_END = 4
 
 def check_shutdown_time():
     current_time = datetime.datetime.now()
@@ -56,9 +56,9 @@ COOLDOWN_TIME = 3600  # 1 hour in seconds, adjust as needed
 #if not already in game open it from desktop else throw error
 
 # isFoodCollected = False
-waitingTime = 1.5;
+waitingTime = 2.5;
 
-def findClick(image : str, time = .5, confidence = .7) -> None:
+def findClick(image : str, time = .5, confidence = .86) -> None:
     """Given an image will click on the centered location
     
     :param image: Image to find on screen
@@ -74,9 +74,9 @@ def findClick(image : str, time = .5, confidence = .7) -> None:
     except ImageNotFoundException:
         return None
 
-def isOnScreen(image):
+def isOnScreen(image, confidence = .86):
     try:
-        item = locateOnScreen(image = image, confidence = .76)
+        item = locateOnScreen(image = image, confidence = confidence)
         if item:
             return True
     except ImageNotFoundException:
@@ -123,14 +123,14 @@ def mirrorSwitch(maps = 0):
 
 def collectAll():
     """Finds and clicks on CollectAll, Confirm, then looks for gems"""
-    findClick(COLLECTALL)
+    findClick(COLLECTALL, confidence = .75)
     findClick(CONFIRM)
-    sleep(2)
-    findClick(GEM, confidence = .6)
-    sleep(1)
-    findClick(GEM, confidence = .6)
-    sleep(1)
-    findClick(GEM, confidence = .6)
+    sleep(2.2)
+    findClick(GEM, confidence = .58)
+    findClick(NEXUSCOLLECT)
+    sleep(1.5)
+    findClick(COLLECTNEXUS)
+
     
 def collectFood():
     """Collects all the food available on screen until no more is found (recursive)"""
@@ -156,7 +156,7 @@ def collectFood():
     
 def rebake():
     """Clicks on last collected Bakery then rebakes all"""
-    click()
+    findClick(BAKERY, confidence = .7)
     sleep(1.5)
     findClick(RETRY)
     findClick(CONFIRM)
@@ -181,8 +181,9 @@ def changeMap():
         (PSYCHIC_ISLAND, FAERIE),
         (FAERIE_ISLAND, BONE),
         (BONE_ISLAND, MAGICALSANCTUM),
-        (MAGICALSANCTUM_ISLAND, SEASONAL),
-        (SEASONAL_ISLAND, WUBLIN),
+        (MAGICALSANCTUM_ISLAND, NEXUS),
+        (NEXUS_ISLAND, AMBER),
+        (AMBER_ISLAND, WUBLIN),
         (MIRROR_PLANT_ISLAND, MIRROR_COLD),
         (MIRROR_COLD_ISLAND, MIRROR_AIR),
         (MIRROR_AIR_ISLAND, MIRROR_WATER),
@@ -190,12 +191,15 @@ def changeMap():
     ]
 
     findClick(MAP)
+    #sleep(2)
 
     for current_island, next_button in island_sequence:
         if isOnScreen(current_island):
             findClick(next_button)
-            sleep(waitingTime)
-            findClick(GO, time=3)
+            print("current detected island: "+ current_island)    
+            print("next island: "+ next_button) 
+            sleep(waitingTime) 
+            findClick(GO)
             sleep(2)
     
     # Special case
@@ -207,34 +211,47 @@ def changeMap():
 
     # Special case for the last island
     if isOnScreen(MIRROR_EARTH_ISLAND):
-        sleep(1)
         findClick(UNMIRROR)
         sleep(2)
         findClick(PLANT)
         sleep(2)
-        findClick(GO, time=3)
-        sleep(2)
+        findClick(GO)
+        sleep(5)
 
 
 
 
-timeUntillRetry = 60 * 6
+timeUntillRetry = 60 * 10
 
 def retry():
+    done = 0
     if isOnScreen(USE):
         print("USING")
         findClick(OK)
         sleep(timeUntillRetry)
         findClick(PLAY)
+        done = 1
+       
 
     if isOnScreen(TIMEOUT):
         print("TIMEOUT")
         findClick(OK)
         sleep(timeUntillRetry)
         findClick(PLAY)
+        done = 1
+        
 
-    findClick(OK)
-    findClick(PLAY)
+    
+
+    if isOnScreen(PLAY):
+        sleep(timeUntillRetry)
+        findClick(PLAY)
+        
+    if done == 0 :
+        findClick(CONTINUE)
+        findClick(OK)
+        findClick(PLAY)
+
     
 def closeNoti():
     findClick(NOTI)
@@ -252,14 +269,35 @@ def shutdown_pc():
     else:  # For Unix-based systems
         os.system('sudo shutdown -h now')
 
+def breed():
+    if isOnScreen(BREED, confidence = .6):
+        findClick(BREED)
+        sleep(2)
+        findClick(ZAP)
+        sleep(4)
+        findClick(ZAP_TO, confidence = .7)
+        sleep(2)
+        findClick(CONFIRM)
+        sleep(3)
+        findClick(BREEDER, confidence = .68)
+        sleep(4)
+        findClick(BREEDREAL, confidence = .7)
+        sleep(3)
+        findClick(RETRY)
+        sleep(3)
+        findClick(CONFIRM_BREEDING, confidence = .7)
+        sleep(3)
+        findClick(WAIT, confidence = .7)
+        sleep(3)
+
 def main():
     """Closes notification, Then Main Loop."""
     print("started")
-    keyboard.press_and_release("alt+tab")
+    #keyboard.press_and_release("alt+tab")
     sleep(2)
 
-    for i in range(9):
-        scroll(-10)
+    #for i in range(9):
+    #    scroll(-10)
     # closeNotification()
     # print("close notif")
 
@@ -267,19 +305,23 @@ def main():
     start_time = time.time()
 
     while True:
-        retry()
-        closeNoti()
-        closeMailbox()
-        #if keyboard.is_pressed('q'):
-        #    break
-        collectAll()
-        if collectFood():
-            rebake()
-        collectFood()
-        print("collected")
-        changeMap()
+        if iteration_count % 10:
+            retry()
+            closeNoti()
+            closeMailbox()
+        if keyboard.is_pressed('q'):
+            break
+
         sleep(1)
+        breed();
+        collectAll()
+        collectFood()#: if
+            #rebake()
+        print("collected")
+
+        changeMap()
         print("map changed")
+        sleep(2.5)
 
 
         current_time = time.time()
@@ -295,6 +337,8 @@ def main():
 
         if check_shutdown_time():
             break
+
+        iteration_count = iteration_count + 1
 
 main()
 

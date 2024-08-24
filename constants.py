@@ -1,7 +1,17 @@
 # Constants for MySingingMonstersAutoBot
 
 # Images
+WAIT = "Images\\wait.png"
+BREEDER = "Images\\breeder.png"
+BREED = "Images\\breed.png"
+BREEDREAL = "Images\\breedReal.png"
+ZAP = "Images\\zap.png"
+ZAP_TO = "Images\\zap_to.png"
+CONFIRM_BREEDING = "Images\\confirm_breeding.png"
 
+COLLECTNEXUS = "Images\\collect_nexus.png"
+NEXUSCOLLECT = "Images\\nexus_collect.png"
+BAKERY = "Images\\bakery.png"
 PLAY = "Images\\play.png"
 USE = "Images\\use.png"
 TIMEOUT = "Images\\timeout.png"
@@ -41,7 +51,9 @@ PSYCHIC = "Images\\psychic_select.png"
 FAERIE = "Images\\faerie_select.png"
 BONE = "Images\\bone_select.png"
 MAGICALSANCTUM = "Images\\magicalSanctum_select.png"
+NEXUS = "Images\\nexus_select.png"
 SEASONAL = "Images\\seasonalShanty_select.png"
+AMBER = "Images\\amber_select.png"
 WUBLIN = "Images\\wublin_select.png"
 
 
@@ -66,7 +78,9 @@ PSYCHIC_ISLAND = "Images\\psychic.png"
 FAERIE_ISLAND = "Images\\faerie.png"
 BONE_ISLAND = "Images\\bone.png"
 MAGICALSANCTUM_ISLAND = "Images\\magicalSanctum.png"
+NEXUS_ISLAND = "Images\\nexus.png"
 SEASONAL_ISLAND = "Images\\seasonalShanty.png"
+AMBER_ISLAND = "Images\\amber.png"
 WUBLIN_ISLAND = "Images\\wublin.png"
 
 MIRROR_PLANT_ISLAND = "Images\\mirror_plant.png"
