@@ -1,4 +1,4 @@
-from pyautogui import locateCenterOnScreen, ImageNotFoundException, click, doubleClick, moveTo, locateOnScreen, locateAllOnScreen, scroll
+from pyautogui import locateCenterOnScreen, ImageNotFoundException, click, doubleClick, moveTo, locateOnScreen, locateAllOnScreen, scroll, keyDown, keyUp
 from time import sleep
 from os import listdir
 from constants import *
@@ -10,8 +10,8 @@ from typing import List, Tuple
 import datetime
 import time
 
-RESTART_INTERVAL = 5400
-HIBERNATION_INTERVAL = 5400  # 1.5 hours in seconds
+RESTART_INTERVAL = 2000
+HIBERNATION_INTERVAL = 2000  # not 1.5 hours in seconds
 
 def restart_pc():
     print("Restarting the PC...")
@@ -30,6 +30,7 @@ def hibernate_pc():
 # Define the hour at which the script should shut down (24-hour format)
 SHUTDOWN_HOUR = 3  # For example, 10 PM
 SHUTDOWN_HOUR_END = 4
+
 
 def check_shutdown_time():
     current_time = datetime.datetime.now()
@@ -72,6 +73,7 @@ def findClick(image : str, time = .5, confidence = .86) -> None:
             click(location)
             sleep(time)
     except ImageNotFoundException:
+        # print("Not found: " + image)
         return None
 
 def isOnScreen(image, confidence = .86):
@@ -123,19 +125,26 @@ def mirrorSwitch(maps = 0):
 
 def collectAll():
     """Finds and clicks on CollectAll, Confirm, then looks for gems"""
-    findClick(COLLECTALL, confidence = .75)
-    findClick(CONFIRM)
-    sleep(2.2)
-    findClick(GEM, confidence = .58)
-    findClick(NEXUSCOLLECT)
-    sleep(1.5)
-    findClick(COLLECTNEXUS)
+    findClick(COLLECT, confidence = .7)
+
+    if isOnScreen(COLLECTALL, confidence = .75):
+        findClick(COLLECTALL, confidence = .75)
+        findClick(CONFIRM)
+    sleep(2)
+    findClick(GEM, confidence = .6)
+    findClick(GEM2, confidence = .6)
+
+    if isOnScreen(NEXUSCOLLECT, confidence = .7):
+        findClick(NEXUSCOLLECT, confidence = .7)
+        sleep(1.5)
+        findClick(COLLECTNEXUS, confidence = .7)
 
     
 def collectFood():
     """Collects all the food available on screen until no more is found (recursive)"""
     try:
-        food_found = list(locateAllOnScreen(FOOD, confidence = .6))
+        food_found = list(locateAllOnScreen(FOOD, confidence = .62))
+        print("number of food detected: "+ str(len(food_found)))   
     except ImageNotFoundException:
         return None
     except Exception as e:
@@ -176,7 +185,8 @@ def changeMap():
         (ETHEREAL_ISLAND, ETHEREALWORKSHOP),
         (ETHEREALWORKSHOP_ISLAND, FIREHAVEN),
         (FIREHAVEN_ISLAND, FIREOASIS),
-        (FIREOASIS_ISLAND, LIGHT),
+        (FIREOASIS_ISLAND, MYTHICAL),
+        (MYTHICAL_ISLAND, LIGHT),
         (LIGHT_ISLAND, PSYCHIC),
         (PSYCHIC_ISLAND, FAERIE),
         (FAERIE_ISLAND, BONE),
@@ -184,6 +194,7 @@ def changeMap():
         (MAGICALSANCTUM_ISLAND, NEXUS),
         (NEXUS_ISLAND, AMBER),
         (AMBER_ISLAND, WUBLIN),
+        (WUBLIN_ISLAND, CELESTIAL),
         (MIRROR_PLANT_ISLAND, MIRROR_COLD),
         (MIRROR_COLD_ISLAND, MIRROR_AIR),
         (MIRROR_AIR_ISLAND, MIRROR_WATER),
@@ -191,23 +202,37 @@ def changeMap():
     ]
 
     findClick(MAP)
-    #sleep(2)
+    sleep(3) # dont fucking remove this 
 
-    for current_island, next_button in island_sequence:
-        if isOnScreen(current_island):
-            findClick(next_button)
-            print("current detected island: "+ current_island)    
-            print("next island: "+ next_button) 
-            sleep(waitingTime) 
-            findClick(GO)
-            sleep(2)
-    
-    # Special case
-    if isOnScreen(WUBLIN_ISLAND):         
-        print("WUBLINN")         
+    usinng = 0
+    if isOnScreen(MIRROR_PLANT_ISLAND):
+        print("muori")     
+        findClick(MIRROR_COLD)
+        sleep(2)
+        findClick(GO)
+        sleep(5)
+
+    if isOnScreen(MIRROR_AIR_ISLAND):
+        print("muori")     
+        findClick(MIRROR_WATER)
+        sleep(2)
+        findClick(GO)
+        sleep(5)
+
+    if isOnScreen(MIRROR_WATER_ISLAND):
+        print("muori2")     
+        findClick(MIRROR_EARTH)
+        sleep(2)
+        findClick(GO)
+        sleep(5)
+
+     # Special case
+    if isOnScreen(CELESTIAL_ISLAND):         
+        print("LAST")         
         findClick(MIRROR)         
         sleep(waitingTime)         
         findClick(MIRROR_PLANT) 
+
 
     # Special case for the last island
     if isOnScreen(MIRROR_EARTH_ISLAND):
@@ -217,6 +242,29 @@ def changeMap():
         sleep(2)
         findClick(GO)
         sleep(5)
+
+    for current_island, next_button in island_sequence:
+        if isOnScreen(current_island):
+            findClick(next_button)
+            print("current detected island: "+ current_island)    
+            print("next island: "+ next_button) 
+            sleep(waitingTime) 
+            findClick(GO)
+            usinng = 1
+            sleep(2)
+
+
+
+
+    # IF NOT ISLANDS SELECTED
+    if usinng == 0:
+        for current_island, next_button in island_sequence:
+            if isOnScreen(next_button):
+                findClick(next_button)
+                print("defaulting to first available island: "+ next_button)    
+                sleep(waitingTime) 
+                findClick(GO)
+                sleep(2)
 
 
 
@@ -230,7 +278,7 @@ def retry():
         findClick(OK)
         sleep(timeUntillRetry)
         findClick(PLAY)
-        done = 1
+
        
 
     if isOnScreen(TIMEOUT):
@@ -238,29 +286,30 @@ def retry():
         findClick(OK)
         sleep(timeUntillRetry)
         findClick(PLAY)
-        done = 1
+
         
 
-    
-
-    if isOnScreen(PLAY):
-        sleep(timeUntillRetry)
-        findClick(PLAY)
-        
-    if done == 0 :
+    else:
         findClick(CONTINUE)
         findClick(OK)
-        findClick(PLAY)
+
+        if isOnScreen(PLAY):
+            sleep(timeUntillRetry)
+            findClick(PLAY)
+        
+
+        
+ 
 
     
 def closeNoti():
-    findClick(NOTI)
-    findClick(NOTI2)
+    findClick(NOTI, confidence = .75)
+    findClick(NOTI2, confidence = .75)
 
 def closeMailbox():
-    if isOnScreen(MAILBOX):
+    if isOnScreen(MAILBOX, confidence = .75):
         print("MAILBOX")
-        findClick(CLOSE)
+        findClick(CLOSE, confidence = .75)
 
 def shutdown_pc():
     print("Shutting down PC...")
@@ -269,33 +318,197 @@ def shutdown_pc():
     else:  # For Unix-based systems
         os.system('sudo shutdown -h now')
 
-def breed():
-    if isOnScreen(BREED, confidence = .6):
-        findClick(BREED)
+def breed(order = 1, nobreed = 0):
+    if isOnScreen(BREED, confidence = .7) and nobreed == 0:
+        findClick(BREED, confidence = .7)
         sleep(2)
-        findClick(ZAP)
-        sleep(4)
-        findClick(ZAP_TO, confidence = .7)
-        sleep(2)
-        findClick(CONFIRM)
+
+        if isOnScreen(CLACKULA, confidence = .79):  # clackula or magic repetetitive
+            print("not ckackuka")
+            findClick(WAIT, confidence = .7)
+            sleep(3)
+            if isOnScreen(CONFIRM, confidence = .7):
+                nobreed = 1
+                findClick(CONFIRM, confidence = .7)
+                sleep(3)
+            else :
+                if order == 1:
+                    findClick(BREEDER, confidence = .78)
+                else:
+                    findClick(BREEDER2, confidence = .78)
+                sleep(4)
+                if isOnScreen(BREEDREAL, confidence = .74):
+                    findClick(BREEDREAL, confidence = .74)
+
+                if isOnScreen(BREEDREALPROMOMYTHIC, confidence = .74):
+                    findClick(BREEDREALPROMOMYTHIC, confidence = .74)
+
+                sleep(3)
+                findClick(RETRY, confidence = .74)
+                sleep(3)
+                findClick(CONFIRM_BREEDING, confidence = .74)
+                sleep(3)
+                findClick(WAIT, confidence = .74)
+                sleep(3)
+                if isOnScreen(CONFIRM, confidence = .7):
+                    nobreed = 1
+                    findClick(CONFIRM, confidence = .7)
+                    sleep(2)
+
+
+        findClick(ZAP, confidence = .74)
+        #sleep(3)
+        #findClick(ZAP_AMBER, confidence = .74)
+        sleep(5)
+        if isOnScreen(ZAP_TO, confidence = .68):
+            findClick(ZAP_TO, confidence = .74)
+            sleep(3)
+            
+            if isOnScreen(CONFIRM_WUBLIN, confidence = .74):
+                print("NOT NATTY")
+                findClick(CONFIRM, confidence = .74)
+                sleep(3)
+            else:   # else if is rare or some else
+                print("RARE maybe")
+                findClick(CONFIRM, confidence = .74)
+                sleep(3)
+                findClick(CLOSE_ZAP, confidence = .74)
+                sleep(3)
+                findClick(WAIT, confidence = .74)
+                sleep(3)
+                if isOnScreen(CONFIRM, confidence = .7):
+                    nobreed = 1
+                    findClick(CONFIRM, confidence = .7)
+                    sleep(2)
+           
+
+            if isOnScreen(CONFIRM_WUBLIN, confidence = .74):
+                findClick(CLOSE, confidence = .74)
+            else:
+                findClick(CONFIRM, confidence = .74) #changed here if rare
+                # sleep(3)
+                # findClick(CLOSE, confidence = .7)
+                # sleep(3)
+                # findClick(WAIT, confidence = .7)
+                
+                # if isOnScreen(CONFIRM, confidence = .7):
+                #     findClick(CONFIRM, confidence = .7)
+                #     sleep(2)
+                # else:
+                #     scroll(-1)
+                #     scroll(1)
+                    
+            sleep(3)
+            if order == 1:
+                findClick(BREEDER, confidence = .78)
+            else:
+                findClick(BREEDER2, confidence = .78)
+            sleep(4)
+            if isOnScreen(BREEDREAL, confidence = .74):
+                findClick(BREEDREAL, confidence = .74)
+
+            if isOnScreen(BREEDREALPROMOMYTHIC, confidence = .74):
+                findClick(BREEDREALPROMOMYTHIC, confidence = .74)
+
+            sleep(3)
+            findClick(RETRY, confidence = .74)
+            sleep(3)
+            findClick(CONFIRM_BREEDING, confidence = .7)
+            sleep(3)
+            findClick(WAIT, confidence = .7)
+            sleep(3)
+            if isOnScreen(CONFIRM, confidence = .7):
+                nobreed = 1
+                findClick(CONFIRM, confidence = .7)
+                sleep(2)
+        else:
+            findClick(CLOSE_ZAP, confidence = .7)
+            sleep(3)
+            findClick(WAIT, confidence = .7)
+            sleep(3)
+            if isOnScreen(CONFIRM, confidence = .7):
+                nobreed = 1
+                findClick(CONFIRM, confidence = .7)
+                sleep(2)
+            else:
+                scroll(-1)
+                scroll(1)
+                sleep(3)
+        return nobreed
+    return nobreed
+
+def hatch(nohatch = 0):
+    if isOnScreen(HATCH, confidence = .7) and nohatch == 0:
+        findClick(HATCH, confidence = .7)
         sleep(3)
-        findClick(BREEDER, confidence = .68)
-        sleep(4)
-        findClick(BREEDREAL, confidence = .7)
+        if isOnScreen(CLACKULA_HATCH, confidence = .74):
+            findClick(PLACE, confidence = .7)
+        else:
+            nohatch = 1
+            findClick(CLOSE_HATCH, confidence = .7)
         sleep(3)
-        findClick(RETRY)
+        findClick(CONFIRM, confidence = .7)
         sleep(3)
-        findClick(CONFIRM_BREEDING, confidence = .7)
+        moveTo(1000, 500)
+        keyDown('down')
         sleep(3)
-        findClick(WAIT, confidence = .7)
+        keyUp('down')
         sleep(3)
+        return nohatch
+    return nohatch
+
+def conundrum():
+    if isOnScreen(CONUNDRUM, confidence = .75):
+        findClick(CONUNDRUM, confidence = .75)
+        sleep(3)
+        findClick(CONUNDRUM_COLLECT, confidence = .75)
+        sleep(10)
+        scroll(1)
+        sleep(3)
+        findClick(CLOSE, confidence = .75)
+        sleep(3)
+
+def countingStars():
+    breed_locations = locateAllOnScreen(BREED, confidence=0.76)
+
+    # Method 1: Convert to a list and use len()
+    # breed_list = list(breed_locations)
+    # number_of_breeds = len(breed_list)
+
+    # # Method 2: Use sum() with a generator expression
+    number_of_breeds = sum(1 for _ in breed_locations)
+
+    # Method 3: Iterate and count manually
+    # number_of_breeds = 0
+    # for _ in breed_locations:
+    #     number_of_breeds += 1
+
+    print(f"Number of BREED occurrences found: {number_of_breeds}")
+
+
+def spin():
+
+    if isOnScreen(SPIN, confidence = 0.7):
+        findClick(SPIN, confidence = 0.7)
+        sleep(1)
+        moveTo(1000, 500)
+        keyDown('up')
+        sleep(1)
+        keyUp('up')
+        sleep(10)
+        findClick(COLLECT, confidence = .7)
+        sleep(3)
+        findClick(CLOSE, confidence = .7)
 
 def main():
     """Closes notification, Then Main Loop."""
     print("started")
     #keyboard.press_and_release("alt+tab")
-    sleep(2)
-
+    if isOnScreen(COLLECTALL, confidence = .7) or isOnScreen(CLOSE, confidence = .7):
+        print("alr")
+    else:
+        sleep(46)
+        findClick(PLAY)
     #for i in range(9):
     #    scroll(-10)
     # closeNotification()
@@ -304,25 +517,68 @@ def main():
     iteration_count = 0
     start_time = time.time()
 
-    while True:
-        if iteration_count % 10:
-            retry()
-            closeNoti()
-            closeMailbox()
-        if keyboard.is_pressed('q'):
-            break
+    print("done pla6")
+    
 
-        sleep(1)
-        breed();
+    sleep(2)
+
+    while True:
+
+
+
+        # iteration_count = iteration_count + 1
+        # print(iteration_count)
+
+        nohatch = 0
+        nobreed = 0
+        
+        spin()
+        
+        retry()
+        closeNoti()
+        closeMailbox()
+
+        
+        # findClick(BREEDER2, confidence = .76)
+        # print("1")
+        # sleep(4)
+        # findClick(BREEDER, confidence = .76)
+        # print("2")
+        # print("TRIED")
+
+        # countingStars()
+        # sleep(100)
+
+        sleep(0.5)
+        # collectDaily()
+        if isOnScreen(CLOSE, confidence = .7):
+            print("hallah may protect us")
+        else:
+            moveTo(1000, 500)
+            keyDown('down')
+            sleep(2)
+            keyUp('down')
+
         collectAll()
-        collectFood()#: if
+        conundrum()
+
+        nohatchdos = hatch(nohatch = nohatch)
+        hatch(nohatch = nohatchdos)
+
+        nobreeddos = breed(order = 2, nobreed = nobreed)
+        breed(order = 1, nobreed = nobreeddos)  #IF U have 2 breeders (wublins celestials amber)
+
+        if isOnScreen(FOOD, confidence = .6):
+            collectFood()#: if
             #rebake()
         print("collected")
 
+        sleep(1)
         changeMap()
         print("map changed")
-        sleep(2.5)
+        sleep(.5)
 
+        
 
         current_time = time.time()
         if current_time - start_time >= RESTART_INTERVAL:
